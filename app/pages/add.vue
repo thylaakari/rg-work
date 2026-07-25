@@ -3,38 +3,7 @@
 useHead({
   title: 'Добавить',
 })
-import { computed, onUnmounted, reactive, ref } from 'vue'
-import Dexie, { liveQuery } from 'dexie'
-
-/*
-  Таблицы:
-  - cabinets: справочник кабинетов
-  - zones: справочник зон с единой ценой
-  - cabinetZones: связь «кабинет <-> зона»
-*/
-class HospitalDb extends Dexie {
-  constructor() {
-    super('HospitalLocalDB')
-
-    this.version(2).stores({
-      cabinets: '++id, name, createdAt',
-      zones: '++id, name, price, createdAt',
-      cabinetZones:
-        '++id, cabinetId, zoneId, [cabinetId+zoneId], cabinetId, zoneId',
-      patientCounts: '++id, date, cabinetZoneId, [date+cabinetZoneId]',
-    })
-
-    this.version(3).stores({
-      cabinets: '++id, name, sortOrder, createdAt',
-      zones: '++id, name, price, createdAt',
-      cabinetZones:
-        '++id, cabinetId, zoneId, [cabinetId+zoneId], cabinetId, zoneId',
-      patientCounts: '++id, date, cabinetZoneId, [date+cabinetZoneId]',
-    })
-  }
-}
-
-const db = new HospitalDb()
+import { liveQuery } from 'dexie'
 
 /*
   Реактивная подписка на Dexie.

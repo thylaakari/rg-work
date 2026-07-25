@@ -4,49 +4,7 @@
 useHead({
   title: 'Главная',
 })
-import { computed, onUnmounted, reactive, ref, watch } from 'vue'
-import Dexie, { liveQuery } from 'dexie'
-
-/*
-  Это та же база, что в add.vue.
-
-  Новая таблица patientCounts:
-  - date: дата формата YYYY-MM-DD
-  - cabinetZoneId: ID привязки кабинет-зона
-  - count: число пациентов
-  - [date+cabinetZoneId]: уникальная запись для зоны
-    в кабинете на определённую дату.
-*/
-class HospitalDb extends Dexie {
-  constructor() {
-    super('HospitalLocalDB')
-
-    this.version(1).stores({
-      cabinets: '++id, name, createdAt',
-      zones: '++id, name, price, createdAt',
-      cabinetZones:
-        '++id, cabinetId, zoneId, [cabinetId+zoneId], cabinetId, zoneId',
-    })
-
-    this.version(2).stores({
-      cabinets: '++id, name, createdAt',
-      zones: '++id, name, price, createdAt',
-      cabinetZones:
-        '++id, cabinetId, zoneId, [cabinetId+zoneId], cabinetId, zoneId',
-      patientCounts: '++id, date, cabinetZoneId, [date+cabinetZoneId]',
-    })
-
-    this.version(3).stores({
-      cabinets: '++id, name, sortOrder, createdAt',
-      zones: '++id, name, price, createdAt',
-      cabinetZones:
-        '++id, cabinetId, zoneId, [cabinetId+zoneId], cabinetId, zoneId',
-      patientCounts: '++id, date, cabinetZoneId, [date+cabinetZoneId]',
-    })
-  }
-}
-
-const db = new HospitalDb()
+import  { liveQuery } from 'dexie'
 
 const isMoneyVisible = ref(false)
 
