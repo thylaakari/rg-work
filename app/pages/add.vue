@@ -1,5 +1,8 @@
 <!-- app/pages/add.vue -->
 <script setup>
+useHead({
+  title: 'Добавить',
+})
 import { computed, onUnmounted, reactive, ref } from 'vue'
 import Dexie, { liveQuery } from 'dexie'
 

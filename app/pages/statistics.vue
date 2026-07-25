@@ -1,5 +1,9 @@
 <!-- app/pages/statistics.vue -->
 <script setup>
+useHead({
+  title: 'Статистика',
+})
+
 import { computed, onUnmounted, ref, watch } from 'vue'
 import Dexie, { liveQuery } from 'dexie'
 

@@ -1,5 +1,9 @@
 <!-- app/pages/backup.vue -->
 <script setup>
+useHead({
+  title: 'Импорт/экспорт',
+})
+
 import { computed, onMounted, ref } from 'vue'
 import Dexie from 'dexie'
 

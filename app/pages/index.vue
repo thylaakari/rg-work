@@ -1,5 +1,9 @@
 <!-- app/pages/index.vue -->
 <script setup>
+
+useHead({
+  title: 'Главная',
+})
 import { computed, onUnmounted, reactive, ref, watch } from 'vue'
 import Dexie, { liveQuery } from 'dexie'
 
