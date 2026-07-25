@@ -334,14 +334,13 @@ async function detachZone(cabinetId, zoneId) {
 </script>
 
 <template>
-  <UContainer class="max-w-6xl py-8">
     <header class="mb-8">
       <h1 class="text-2xl font-bold">Кабинеты и зоны</h1>
     </header>
 
     <div class="grid gap-6 lg:grid-cols-3">
       <!-- Создание кабинета -->
-      <UCard>
+      <UCard class="apple-glass-soft rounded-2xl border-white/60 shadow-none">
         <template #header>
           <h2 class="text-lg font-semibold">Новый кабинет</h2>
         </template>
@@ -360,7 +359,7 @@ async function detachZone(cabinetId, zoneId) {
       </UCard>
 
       <!-- Создание зоны -->
-      <UCard>
+      <UCard class="apple-glass-soft rounded-2xl border-white/60 shadow-none">
         <template #header>
           <h2 class="text-lg font-semibold">Новая зона</h2>
         </template>
@@ -385,7 +384,7 @@ async function detachZone(cabinetId, zoneId) {
       </UCard>
 
       <!-- Привязка -->
-      <UCard>
+      <UCard class="apple-glass-soft rounded-2xl border-white/60 shadow-none">
         <template #header>
           <h2 class="text-lg font-semibold">Привязать зону</h2>
         </template>
@@ -421,7 +420,7 @@ async function detachZone(cabinetId, zoneId) {
     </div>
 
     <!-- Редактирование кабинета -->
-    <UCard v-if="cabinetEditingId !== null" class="mt-6">
+    <UCard v-if="cabinetEditingId !== null" class="mt-6 apple-glass-soft rounded-2xl border-white/60 shadow-none">
       <template #header>
         <h2 class="text-lg font-semibold">Редактировать кабинет</h2>
       </template>
@@ -442,7 +441,7 @@ async function detachZone(cabinetId, zoneId) {
     </UCard>
 
     <!-- Редактирование зоны -->
-    <UCard v-if="zoneEditingId !== null" class="mt-6">
+    <UCard v-if="zoneEditingId !== null" class="mt-6 apple-glass-soft rounded-2xl border-white/60 shadow-none">
       <template #header>
         <h2 class="text-lg font-semibold">Редактировать зону</h2>
       </template>
@@ -482,7 +481,7 @@ async function detachZone(cabinetId, zoneId) {
       </div>
 
       <div v-if="zones.length" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <UCard v-for="zone in zones" :key="zone.id">
+        <UCard v-for="zone in zones" :key="zone.id" class="apple-glass-soft rounded-2xl border-white/60 shadow-none">
           <div class="flex items-start justify-between gap-4">
             <div>
               <p class="font-semibold">
@@ -647,5 +646,4 @@ async function detachZone(cabinetId, zoneId) {
         description="Создайте первый кабинет в форме выше."
       />
     </section>
-  </UContainer>
 </template>

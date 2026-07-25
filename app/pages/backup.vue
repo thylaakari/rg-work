@@ -280,7 +280,6 @@ onMounted(() => {
 </script>
 
 <template>
-  <UContainer class="max-w-3xl py-8">
     <header class="mb-8">
       <h1 class="text-2xl font-bold">Резервная копия</h1>
 
@@ -299,7 +298,7 @@ onMounted(() => {
       :description="message"
     />
 
-    <UCard class="mb-5">
+    <UCard class="apple-glass-soft apple-glass-inset mb-5 rounded-3xl overflow-hidden">
       <template #header>
         <div>
           <h2 class="text-lg font-semibold">Экспорт базы</h2>
@@ -331,7 +330,7 @@ onMounted(() => {
       </div>
     </UCard>
 
-    <UCard>
+    <UCard class="apple-glass-soft rounded-2xl border-white/60 shadow-none">
       <template #header>
         <div>
           <h2 class="text-lg font-semibold">Импорт базы</h2>
@@ -368,5 +367,4 @@ onMounted(() => {
         Выбрать JSON-файл и восстановить
       </UButton>
     </UCard>
-  </UContainer>
 </template>

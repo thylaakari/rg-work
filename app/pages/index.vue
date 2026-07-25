@@ -300,7 +300,6 @@ async function loadPatientsForDate() {
     })
   } catch (error) {
     console.error(error)
-    alert('Не удалось загрузить данные за выбранную дату')
   } finally {
     isLoading.value = false
   }
@@ -463,9 +462,8 @@ function clearAllInputs() {
 </script>
 
 <template>
-  <UContainer class="max-w-6xl py-6">
     <header
-      class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
+      class="apple-glass sticky top-4 z-20 mb-6 rounded-3xl px-4 py-4 md:px-6"
     >
       <div>
         <h1 class="text-2xl font-bold">Пациенты по кабинетам</h1>
@@ -503,7 +501,7 @@ function clearAllInputs() {
     />
 
     <div class="mb-5 grid gap-3 sm:grid-cols-3">
-      <UCard>
+      <UCard class="apple-glass-soft apple-glass-inset rounded-3xl overflow-hidden">
         <p class="text-sm text-gray-500">Пациентов за выбранный день</p>
 
         <p class="mt-1 text-2xl font-bold">
@@ -511,7 +509,7 @@ function clearAllInputs() {
         </p>
       </UCard>
 
-      <UCard>
+      <UCard class="apple-glass-soft apple-glass-inset rounded-3xl overflow-hidden">
         <p class="text-sm text-gray-500">Сумма за выбранный день</p>
 
         <div class="mt-1 flex items-center gap-2">
@@ -530,7 +528,7 @@ function clearAllInputs() {
         </div>
       </UCard>
 
-      <UCard>
+      <UCard class="apple-glass-soft apple-glass-inset rounded-3xl overflow-hidden">
         <p class="text-sm text-gray-500">Сумма за {{ selectedMonthTitle }}</p>
 
         <div class="mt-1 flex items-center gap-2">
@@ -559,7 +557,7 @@ function clearAllInputs() {
         v-for="cabinet in cabinetsWithZones"
         :key="cabinet.id"
         :class="[
-          'transition-opacity',
+          'transition-opacity apple-glass-soft rounded-2xl border-white/60 shadow-none',
           draggedCabinetId === cabinet.id ? 'opacity-40' : '',
           dragOverCabinetId === cabinet.id ? 'ring-2 ring-primary' : '',
         ]"
@@ -669,5 +667,4 @@ function clearAllInputs() {
         Сохранить данные за {{ selectedDateLabel }}
       </UButton>
     </div>
-  </UContainer>
 </template>

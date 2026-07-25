@@ -148,7 +148,6 @@ async function loadMonthRecords() {
       .toArray()
   } catch (error) {
     console.error(error)
-    alert('Не удалось загрузить статистику за месяц')
   } finally {
     isLoading.value = false
   }
@@ -378,7 +377,6 @@ const zoneStats = computed(() => {
 </script>
 
 <template>
-  <UContainer class="max-w-6xl py-6">
     <header
       class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
     >
@@ -412,7 +410,7 @@ const zoneStats = computed(() => {
     </header>
 
     <div class="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <UCard>
+      <UCard class="apple-glass-soft apple-glass-inset rounded-3xl overflow-hidden">
         <p class="text-sm text-gray-500">Всего пациентов</p>
 
         <p class="mt-1 text-2xl font-bold">
@@ -422,7 +420,7 @@ const zoneStats = computed(() => {
         <p class="mt-1 text-xs text-gray-500">За {{ selectedMonthTitle }}</p>
       </UCard>
 
-      <UCard>
+      <UCard class="apple-glass-soft apple-glass-inset rounded-3xl overflow-hidden">
         <p class="text-sm text-gray-500">Выручка за месяц</p>
 
         <p class="mt-1 text-2xl font-bold">
@@ -432,7 +430,7 @@ const zoneStats = computed(() => {
         <p class="mt-1 text-xs text-gray-500">За {{ selectedMonthTitle }}</p>
       </UCard>
 
-      <UCard>
+      <UCard class="apple-glass-soft apple-glass-inset rounded-3xl overflow-hidden">
         <p class="text-sm text-gray-500">Рабочих дней</p>
 
         <p class="mt-1 text-2xl font-bold">
@@ -442,7 +440,7 @@ const zoneStats = computed(() => {
         <p class="mt-1 text-xs text-gray-500">Дни с пациентами</p>
       </UCard>
 
-      <UCard>
+      <UCard class="apple-glass-soft apple-glass-inset rounded-3xl overflow-hidden"А>
         <p class="text-sm text-gray-500">Среднее за рабочий день</p>
 
         <p class="mt-1 text-2xl font-bold">
@@ -635,5 +633,4 @@ const zoneStats = computed(() => {
         :description="`Введите и сохраните пациентов за дни ${selectedMonthTitle} на главной странице.`"
       />
     </template>
-  </UContainer>
 </template>
