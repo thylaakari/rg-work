@@ -259,14 +259,14 @@ async function handleImportFile(event) {
       }.`,
     )
   } catch (error) {
-    console.error(error)
+    console.error('IMPORT ERROR:', error)
 
     if (error instanceof SyntaxError) {
       showMessage('error', 'Файл повреждён: не удалось прочитать JSON.')
     } else {
       showMessage(
         'error',
-        'Не удалось импортировать файл. Проверьте, что это резервная копия данного приложения.',
+        `Не удалось импортировать файл: ${error?.message || 'неизвестная ошибка'}`
       )
     }
   } finally {
