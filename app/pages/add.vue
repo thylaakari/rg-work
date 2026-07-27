@@ -152,24 +152,43 @@ async function updateCabinet() {
 }
 
 async function deleteCabinet(cabinetId) {
+  if (!db) return
+
   const confirmed = window.confirm(
-    'Удалить кабинет? Сами зоны сохранятся, будут удалены только их привязки к этому кабинету.',
+    'Удалить кабинет и все связанные с ним зоны пациентов? Это действие нельзя отменить.'
   )
 
   if (!confirmed) return
 
-  await db.transaction('rw', db.cabinets, db.cabinetZones, async () => {
-    await db.cabinetZones.where('cabinetId').equals(cabinetId).delete()
-    await db.cabinets.delete(cabinetId)
-  })
-  openedCabinets.value = openedCabinets.value.filter((id) => id !== cabinetId)
+  try {
+    await db.transaction(
+      'rw',
+      db.cabinets,
+      db.cabinetZones,
+      db.patientCounts,
+      async () => {
+        const links = await db.cabinetZones
+          .where('cabinetId')
+          .equals(cabinetId)
+          .toArray()
 
-  if (cabinetEditingId.value === cabinetId) {
-    cancelCabinetEdit()
-  }
+        const cabinetZoneIds = links.map(link => link.id)
 
-  if (bindingForm.cabinetId === cabinetId) {
-    bindingForm.cabinetId = null
+        if (cabinetZoneIds.length) {
+          await db.patientCounts
+            .where('cabinetZoneId')
+            .anyOf(cabinetZoneIds)
+            .delete()
+
+          await db.cabinetZones.bulkDelete(cabinetZoneIds)
+        }
+
+        await db.cabinets.delete(cabinetId)
+      }
+    )
+  } catch (error) {
+    console.error(error)
+    alert('Не удалось удалить кабинет')
   }
 }
 
@@ -234,23 +253,43 @@ async function updateZone() {
 }
 
 async function deleteZone(zoneId) {
+  if (!db) return
+
   const confirmed = window.confirm(
-    'Удалить зону? Она будет откреплена от всех кабинетов.',
+    'Удалить зону и всех пациентов, связанных с ней во всех кабинетах? Это действие нельзя отменить.'
   )
 
   if (!confirmed) return
 
-  await db.transaction('rw', db.zones, db.cabinetZones, async () => {
-    await db.cabinetZones.where('zoneId').equals(zoneId).delete()
-    await db.zones.delete(zoneId)
-  })
+  try {
+    await db.transaction(
+      'rw',
+      db.zones,
+      db.cabinetZones,
+      db.patientCounts,
+      async () => {
+        const links = await db.cabinetZones
+          .where('zoneId')
+          .equals(zoneId)
+          .toArray()
 
-  if (zoneEditingId.value === zoneId) {
-    cancelZoneEdit()
-  }
+        const cabinetZoneIds = links.map(link => link.id)
 
-  if (bindingForm.zoneId === zoneId) {
-    bindingForm.zoneId = null
+        if (cabinetZoneIds.length) {
+          await db.patientCounts
+            .where('cabinetZoneId')
+            .anyOf(cabinetZoneIds)
+            .delete()
+
+          await db.cabinetZones.bulkDelete(cabinetZoneIds)
+        }
+
+        await db.zones.delete(zoneId)
+      }
+    )
+  } catch (error) {
+    console.error(error)
+    alert('Не удалось удалить зону')
   }
 }
 
