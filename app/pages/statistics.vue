@@ -249,24 +249,18 @@ const dailyStats = computed(() => {
 const cabinetStats = computed(() => {
   const result = new Map()
 
-  /*
-    Включаем все существующие кабинеты, даже если в месяце
-    по ним ещё нет ни одного пациента.
-  */
+  // Создаём строки для всех существующих кабинетов.
   cabinets.value.forEach((cabinet) => {
     result.set(cabinet.id, {
       id: cabinet.id,
       name: cabinet.name,
       patients: 0,
       money: 0,
-      zones: new Set(),
+      zones: new Map(),
     })
   })
 
-  /*
-    Добавляем зоны кабинета даже при отсутствии пациентов
-    за выбранный месяц.
-  */
+  // Добавляем все привязанные зоны, в том числе без пациентов.
   cabinetZones.value.forEach((link) => {
     const cabinet = findCabinet(link.cabinetId)
     const zone = findZone(link.zoneId)
@@ -277,15 +271,21 @@ const cabinetStats = computed(() => {
         name: cabinet?.name || 'Удалённый кабинет',
         patients: 0,
         money: 0,
-        zones: new Set(),
+        zones: new Map(),
       })
     }
 
-    if (zone?.name) {
-      result.get(link.cabinetId).zones.add(zone.name)
-    }
+    const cabinetItem = result.get(link.cabinetId)
+
+    cabinetItem.zones.set(link.id, {
+      id: link.id,
+      name: zone?.name || 'Удалённая зона',
+      patients: 0,
+      money: 0,
+    })
   })
 
+  // Суммируем пациентов и выручку по каждой зоне конкретного кабинета.
   monthRecords.value.forEach((record) => {
     const info = getRecordInfo(record)
 
@@ -297,24 +297,36 @@ const cabinetStats = computed(() => {
         name: info.cabinetName,
         patients: 0,
         money: 0,
-        zones: new Set(),
+        zones: new Map(),
       })
     }
 
-    const item = result.get(info.cabinetId)
+    const cabinetItem = result.get(info.cabinetId)
 
-    item.patients += info.count
-    item.money += info.money
-
-    if (info.zoneName && info.zoneName !== 'Удалённая зона') {
-      item.zones.add(info.zoneName)
+    if (!cabinetItem.zones.has(record.cabinetZoneId)) {
+      cabinetItem.zones.set(record.cabinetZoneId, {
+        id: record.cabinetZoneId,
+        name: info.zoneName,
+        patients: 0,
+        money: 0,
+      })
     }
+
+    const zoneItem = cabinetItem.zones.get(record.cabinetZoneId)
+
+    cabinetItem.patients += info.count
+    cabinetItem.money += info.money
+
+    zoneItem.patients += info.count
+    zoneItem.money += info.money
   })
 
   return Array.from(result.values())
-    .map((item) => ({
-      ...item,
-      zoneNames: Array.from(item.zones).sort((a, b) => a.localeCompare(b, 'ru')).join(', '),
+    .map((cabinet) => ({
+      ...cabinet,
+      zones: Array.from(cabinet.zones.values()).sort((a, b) => {
+        return b.patients - a.patients || a.name.localeCompare(b.name, 'ru')
+      }),
     }))
     .sort((a, b) => {
       return b.patients - a.patients || a.name.localeCompare(b.name, 'ru')
@@ -528,9 +540,9 @@ const zoneStats = computed(() => {
             <thead class="bg-gray-50 text-left dark:bg-gray-900/40">
               <tr>
                 <th class="px-4 py-3 font-medium">Кабинет</th>
-                <th class="px-4 py-3 font-medium">Зоны</th>
-                <th class="px-4 py-3 text-right font-medium">Пациентов</th>
-                <th class="px-4 py-3 text-right font-medium">Выручка</th>
+<th class="px-4 py-3 font-medium">Зоны</th>
+<th class="px-4 py-3 text-right font-medium">Пациентов</th>
+<th class="px-4 py-3 text-right font-medium">Выручка</th>
               </tr>
             </thead>
 
@@ -540,9 +552,25 @@ const zoneStats = computed(() => {
                   {{ cabinet.name }}
                 </td>
 
-                <td class="max-w-100 px-4 py-2 text-gray-500">
-  <span :title="cabinet.zoneNames">
-    {{ cabinet.zoneNames || 'Нет привязок' }}
+                <td class="min-w-70 px-4 py-2">
+  <div
+    v-if="cabinet.zones.length"
+    class="flex flex-wrap gap-x-3 gap-y-1 text-sm"
+  >
+    <span
+      v-for="zone in cabinet.zones"
+      :key="zone.id"
+      class="whitespace-nowrap text-gray-500"
+    >
+      {{ zone.name }}:
+      <span class="font-medium text-gray-900 dark:text-gray-100">
+        {{ zone.patients }}
+      </span>
+    </span>
+  </div>
+
+  <span v-else class="text-gray-400">
+    Нет привязок
   </span>
 </td>
 
