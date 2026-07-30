@@ -259,7 +259,31 @@ const cabinetStats = computed(() => {
       name: cabinet.name,
       patients: 0,
       money: 0,
+      zones: new Set(),
     })
+  })
+
+  /*
+    Добавляем зоны кабинета даже при отсутствии пациентов
+    за выбранный месяц.
+  */
+  cabinetZones.value.forEach((link) => {
+    const cabinet = findCabinet(link.cabinetId)
+    const zone = findZone(link.zoneId)
+
+    if (!result.has(link.cabinetId)) {
+      result.set(link.cabinetId, {
+        id: link.cabinetId,
+        name: cabinet?.name || 'Удалённый кабинет',
+        patients: 0,
+        money: 0,
+        zones: new Set(),
+      })
+    }
+
+    if (zone?.name) {
+      result.get(link.cabinetId).zones.add(zone.name)
+    }
   })
 
   monthRecords.value.forEach((record) => {
@@ -273,17 +297,28 @@ const cabinetStats = computed(() => {
         name: info.cabinetName,
         patients: 0,
         money: 0,
+        zones: new Set(),
       })
     }
 
     const item = result.get(info.cabinetId)
+
     item.patients += info.count
     item.money += info.money
+
+    if (info.zoneName && info.zoneName !== 'Удалённая зона') {
+      item.zones.add(info.zoneName)
+    }
   })
 
-  return Array.from(result.values()).sort((a, b) => {
-    return b.patients - a.patients || a.name.localeCompare(b.name, 'ru')
-  })
+  return Array.from(result.values())
+    .map((item) => ({
+      ...item,
+      zoneNames: Array.from(item.zones).sort((a, b) => a.localeCompare(b, 'ru')).join(', '),
+    }))
+    .sort((a, b) => {
+      return b.patients - a.patients || a.name.localeCompare(b.name, 'ru')
+    })
 })
 
 /* ---------- По зонам ---------- */
@@ -489,10 +524,11 @@ const zoneStats = computed(() => {
         <div
           class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800"
         >
-          <table class="w-full min-w-150 text-sm">
+          <table class="w-full min-w-190 text-sm">
             <thead class="bg-gray-50 text-left dark:bg-gray-900/40">
               <tr>
                 <th class="px-4 py-3 font-medium">Кабинет</th>
+                <th class="px-4 py-3 font-medium">Зоны</th>
                 <th class="px-4 py-3 text-right font-medium">Пациентов</th>
                 <th class="px-4 py-3 text-right font-medium">Выручка</th>
               </tr>
@@ -503,6 +539,12 @@ const zoneStats = computed(() => {
                 <td class="px-4 py-2 font-medium">
                   {{ cabinet.name }}
                 </td>
+
+                <td class="max-w-100 px-4 py-2 text-gray-500">
+  <span :title="cabinet.zoneNames">
+    {{ cabinet.zoneNames || 'Нет привязок' }}
+  </span>
+</td>
 
                 <td class="px-4 py-2 text-right">
                   {{ cabinet.patients }}
@@ -515,14 +557,15 @@ const zoneStats = computed(() => {
             </tbody>
 
             <tfoot class="bg-gray-50 font-semibold dark:bg-gray-900/40">
-              <tr>
-                <td class="px-4 py-3">Итого</td>
-                <td class="px-4 py-3 text-right">{{ monthPatients }}</td>
-                <td class="px-4 py-3 text-right">
-                  {{ isMoneyVisible ? formatMoney(monthMoney) : '••••••' }}
-                </td>
-              </tr>
-            </tfoot>
+  <tr>
+    <td class="px-4 py-3">Итого</td>
+    <td class="px-4 py-3"></td>
+    <td class="px-4 py-3 text-right">{{ monthPatients }}</td>
+    <td class="px-4 py-3 text-right">
+      {{ isMoneyVisible ? formatMoney(monthMoney) : '••••••' }}
+    </td>
+  </tr>
+</tfoot>
           </table>
         </div>
       </section>
