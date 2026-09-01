@@ -157,10 +157,7 @@ function getZonesForCabinet(cabinetId) {
 }
 
 const cabinetsWithZones = computed(() => {
-  const list = cabinets.value || []
-  if (!list.length) return []
-
-  return [...list]
+  return [...cabinets.value]
     .sort((a, b) => {
       const aOrder = Number.isFinite(a.sortOrder)
         ? a.sortOrder
@@ -381,94 +378,99 @@ function clearAllInputs() {
 
 <template>
   <div class="mx-auto max-w-6xl p-3">
-    <!-- Compact header -->
-    <header class="sticky top-2 z-20 mb-2 flex flex-wrap items-end justify-between gap-2 rounded-2xl bg-white/70 px-3 py-2 shadow-sm backdrop-blur dark:bg-gray-900/60">
-      <div class="min-w-0">
-        <h1 class="text-lg font-bold leading-tight">Пациенты по кабинетам</h1>
-        <p class="text-xs text-gray-500">Введите количество пациентов по зонам и сохраните</p>
+    <header class="apple-glass sticky top-2 z-20 mb-3 rounded-2xl px-3 py-3 md:px-4">
+      <div>
+        <h1 class="text-xl font-bold">Пациенты по кабинетам</h1>
+
+        <p class="mt-1 text-xs text-gray-500">
+          Введите количество пациентов по каждой зоне и сохраните данные за выбранную дату.
+        </p>
       </div>
 
-      <div class="flex flex-wrap items-center gap-1.5">
-        <UFormField label="Дата" class="!mb-0">
-          <UInput v-model="selectedDate" type="date" class="h-8 w-36 text-xs" />
+      <div class="flex flex-wrap items-end gap-2">
+        <UFormField label="Дата">
+          <UInput v-model="selectedDate" type="date" class="w-40" />
         </UFormField>
 
-        <UButton color="neutral" variant="soft" size="xs" @click="setToday">
+        <UButton color="neutral" variant="soft" size="sm" @click="setToday">
           Сегодня
         </UButton>
 
-        <UButton color="neutral" variant="soft" size="xs" @click="clearAllInputs">
+        <UButton color="neutral" variant="soft" size="sm" @click="clearAllInputs">
           Очистить
         </UButton>
 
-        <UButton :loading="isSaving" size="xs" @click="savePatients">
-          Сохранить
-        </UButton>
+        <UButton :loading="isSaving" size="sm" @click="savePatients"> Сохранить </UButton>
       </div>
     </header>
 
     <UAlert
       v-if="savedMessage"
-      class="mb-2"
+      class="mb-3"
       color="success"
       variant="subtle"
-      size="sm"
       title="Сохранено"
       :description="savedMessage"
     />
 
-    <!-- Compact stats row -->
-    <div class="mb-2 grid grid-cols-3 gap-2">
-      <div class="rounded-xl bg-white/70 px-2.5 py-2 text-center shadow-sm backdrop-blur dark:bg-gray-900/60">
-        <p class="text-[10px] uppercase tracking-wide text-gray-500">Пациентов</p>
-        <p class="mt-0.5 text-lg font-bold">{{ totalPatients }}</p>
-      </div>
+    <div class="mb-4 grid gap-3 sm:grid-cols-3">
+      <UCard class="apple-glass-soft apple-glass-inset rounded-2xl overflow-hidden">
+        <p class="text-xs text-gray-500">Пациентов за выбранный день</p>
 
-      <div class="rounded-xl bg-white/70 px-2.5 py-2 text-center shadow-sm backdrop-blur dark:bg-gray-900/60">
-        <p class="text-[10px] uppercase tracking-wide text-gray-500">За день</p>
-        <div class="mt-0.5 flex items-center justify-center gap-1">
-          <p class="text-sm font-bold">
-            {{ isMoneyVisible ? formatMoney(totalMoney) : '•••••' }}
+        <p class="mt-1 text-xl font-bold">
+          {{ totalPatients }}
+        </p>
+      </UCard>
+
+      <UCard class="apple-glass-soft apple-glass-inset rounded-2xl overflow-hidden">
+        <p class="text-xs text-gray-500">Сумма за выбранный день</p>
+
+        <div class="mt-1 flex items-center gap-2">
+          <p class="text-xl font-bold">
+            {{ isMoneyVisible ? formatMoney(totalMoney) : '••••••' }}
           </p>
+
           <UButton
             :icon="isMoneyVisible ? 'i-lucide-eye-off' : 'i-lucide-eye'"
             color="neutral"
             variant="ghost"
             size="xs"
-            class="h-5 w-5 p-0"
+            :aria-label="isMoneyVisible ? 'Скрыть суммы' : 'Показать суммы'"
             @click="toggleMoneyVisibility"
           />
         </div>
-      </div>
+      </UCard>
 
-      <div class="rounded-xl bg-white/70 px-2.5 py-2 text-center shadow-sm backdrop-blur dark:bg-gray-900/60">
-        <p class="text-[10px] uppercase tracking-wide text-gray-500">За {{ selectedMonthTitle.split(' ')[0] }}</p>
-        <div class="mt-0.5 flex items-center justify-center gap-1">
-          <p class="text-sm font-bold">
-            {{ isMoneyVisible ? formatMoney(monthMoney) : '•••••' }}
+      <UCard class="apple-glass-soft apple-glass-inset rounded-2xl overflow-hidden">
+        <p class="text-xs text-gray-500">Сумма за {{ selectedMonthTitle }}</p>
+
+        <div class="mt-1 flex items-center gap-2">
+          <p class="text-xl font-bold">
+            {{ isMoneyVisible ? formatMoney(monthMoney) : '••••••' }}
           </p>
+
           <UButton
             :icon="isMoneyVisible ? 'i-lucide-eye-off' : 'i-lucide-eye'"
             color="neutral"
             variant="ghost"
             size="xs"
-            class="h-5 w-5 p-0"
+            :aria-label="isMoneyVisible ? 'Скрыть суммы' : 'Показать суммы'"
             @click="toggleMoneyVisibility"
           />
         </div>
-      </div>
+      </UCard>
     </div>
 
-    <div v-if="isLoading" class="py-6 text-center text-xs text-gray-500">
-      Загрузка…
+    <div v-if="isLoading" class="py-8 text-center text-xs text-gray-500">
+      Загружаю данные…
     </div>
 
-    <div v-else-if="cabinetsWithZones.length" class="space-y-1.5">
+    <div v-else-if="cabinetsWithZones.length" class="space-y-2">
       <UCard
         v-for="cabinet in cabinetsWithZones"
         :key="cabinet.id"
         :class="[
-          'transition-opacity rounded-xl border-white/60 shadow-none',
+          'transition-opacity apple-glass-soft rounded-xl border-white/60 shadow-none',
           draggedCabinetId === cabinet.id ? 'opacity-40' : '',
           dragOverCabinetId === cabinet.id ? 'ring-2 ring-primary' : '',
         ]"
@@ -476,12 +478,12 @@ function clearAllInputs() {
         @drop.prevent="dropCabinet(cabinet.id)"
       >
         <template #header>
-          <div class="flex items-center justify-between gap-2">
-            <div class="flex min-w-0 items-center gap-1.5">
+          <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div class="flex min-w-0 items-center gap-2">
               <button
                 type="button"
                 draggable="true"
-                class="cursor-grab text-gray-400 active:cursor-grabbing"
+                class="cursor-grab touch-none text-gray-400 active:cursor-grabbing"
                 aria-label="Перетащить кабинет для сортировки"
                 title="Перетащите для изменения порядка"
                 @dragstart="startDrag(cabinet.id)"
@@ -491,33 +493,50 @@ function clearAllInputs() {
               </button>
 
               <div class="min-w-0">
-                <h2 class="truncate text-sm font-semibold">
+                <h2 class="truncate font-semibold">
                   {{ cabinet.name }}
                 </h2>
-                <p class="text-[10px] text-gray-500">
-                  {{ cabinet.zones.length }} зон • {{ cabinetPatientsTotal(cabinet) }} пациентов •
-                  {{ isMoneyVisible ? formatMoney(cabinetMoneyTotal(cabinet)) : '•••••' }}
+
+                <p class="text-xs text-gray-500">
+                  Перетащите за значок слева для изменения порядка
                 </p>
               </div>
+
+              <UBadge color="neutral" variant="subtle" size="xs">
+                {{ cabinet.zones.length }} зон
+              </UBadge>
+            </div>
+
+            <div class="flex shrink-0 gap-4 text-xs text-gray-500">
+              <span>{{ cabinetPatientsTotal(cabinet) }} пациентов</span>
+
+              <span>
+                {{
+                  isMoneyVisible
+                    ? formatMoney(cabinetMoneyTotal(cabinet))
+                    : '••••••'
+                }}
+              </span>
             </div>
           </div>
         </template>
 
         <div
           v-if="cabinet.zones.length"
-          class="divide-y divide-gray-100 dark:divide-gray-800"
+          class="divide-y divide-gray-200 dark:divide-gray-800"
         >
           <div
             v-for="zone in cabinet.zones"
             :key="zone.cabinetZoneId"
-            class="grid grid-cols-[1fr_64px_80px] items-center gap-2 px-2 py-1.5"
+            class="grid grid-cols-[minmax(0,1fr)_80px_100px] items-center gap-2 px-3 py-1.5"
           >
             <div class="min-w-0">
-              <p class="truncate text-xs font-medium">
+              <p class="truncate text-sm font-medium">
                 {{ zone.name }}
               </p>
-              <p class="text-[10px] text-gray-500">
-                {{ formatMoney(zone.price) }} / пациент
+
+              <p class="text-xs text-gray-500">
+                {{ formatMoney(zone.price) }} за пациента
               </p>
             </div>
 
@@ -526,7 +545,7 @@ function clearAllInputs() {
               type="number"
               min="0"
               placeholder="0"
-              class="h-7 w-full text-xs"
+              class="w-full"
             />
 
             <p class="text-right text-xs font-medium">
@@ -539,8 +558,8 @@ function clearAllInputs() {
           </div>
         </div>
 
-        <p v-else class="px-2 py-2 text-xs text-gray-500">
-          К этому кабинету не прикреплены зоны.
+        <p v-else class="px-3 py-2 text-xs text-gray-500">
+          К этому кабинету не прикреплены зоны. Добавьте их на странице «Кабинеты и зоны ».
         </p>
       </UCard>
     </div>
@@ -549,14 +568,13 @@ function clearAllInputs() {
       v-else
       color="neutral"
       variant="subtle"
-      size="sm"
       title="Кабинетов пока нет"
       description="Сначала создайте кабинеты и привяжите к ним зоны на странице /add."
     />
 
-    <div class="mt-2 flex justify-end">
-      <UButton :loading="isSaving" size="sm" @click="savePatients">
-        Сохранить за {{ selectedDateLabel }}
+    <div class="mt-3 flex justify-end">
+      <UButton :loading="isSaving" size="md" @click="savePatients">
+        Сохранить данные за {{ selectedDateLabel }}
       </UButton>
     </div>
   </div>
