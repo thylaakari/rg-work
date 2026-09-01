@@ -535,7 +535,6 @@ function clearAllInputs() {
       :description="savedMessage"
     />
 
-    <!-- Компактная строка статистики вместо трёх больших карточек -->
     <UCard class="apple-glass-soft apple-glass-inset mb-3 rounded-2xl overflow-hidden">
       <div class="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
         <div class="flex items-center gap-1.5">
@@ -622,40 +621,43 @@ function clearAllInputs() {
           </div>
         </template>
 
+        <!-- Зоны в сетке: 1 колонка на мобильных, 2 на sm, 3 на lg -->
         <div
           v-if="cabinet.zones.length"
-          class="divide-y divide-gray-200 dark:divide-gray-800"
+          class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3"
         >
           <div
             v-for="zone in cabinet.zones"
             :key="zone.cabinetZoneId"
-            class="grid grid-cols-[minmax(0,1fr)_80px_96px] items-center gap-2 px-3 py-1"
+            class="rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2"
           >
-            <div class="min-w-0 flex items-baseline gap-1.5">
+            <div class="flex items-baseline justify-between gap-2">
               <p class="truncate text-sm font-medium">
                 {{ zone.name }}
               </p>
               <p class="shrink-0 text-xs text-gray-500">
-                ({{ formatMoney(zone.price) }})
+                {{ formatMoney(zone.price) }}
               </p>
             </div>
 
-            <UInput
-              v-model.number="patientInputs[zone.cabinetZoneId]"
-              type="number"
-              size="sm"
-              min="0"
-              placeholder="0"
-              class="w-full"
-            />
+            <div class="mt-1.5 flex items-center gap-2">
+              <UInput
+                v-model.number="patientInputs[zone.cabinetZoneId]"
+                type="number"
+                size="sm"
+                min="0"
+                placeholder="0"
+                class="w-full"
+              />
 
-            <p class="text-right text-sm font-medium">
-              {{
-                formatMoney(
-                  (Number(patientInputs[zone.cabinetZoneId]) || 0) * zone.price,
-                )
-              }}
-            </p>
+              <p class="w-24 shrink-0 text-right text-sm font-medium">
+                {{
+                  formatMoney(
+                    (Number(patientInputs[zone.cabinetZoneId]) || 0) * zone.price,
+                  )
+                }}
+              </p>
+            </div>
           </div>
         </div>
 
