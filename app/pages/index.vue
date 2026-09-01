@@ -1,9 +1,10 @@
 <!-- app/pages/index.vue -->
 <script setup>
+
 useHead({
   title: 'Главная',
 })
-import { liveQuery } from 'dexie'
+import  { liveQuery } from 'dexie'
 
 const isMoneyVisible = ref(false)
 
@@ -64,6 +65,18 @@ const zones = useLiveQuery(() => db.zones.toArray(), [])
 
 const cabinetZones = useLiveQuery(() => db.cabinetZones.toArray(), [])
 
+/*
+  Значения, которые пользователь сейчас видит и редактирует.
+
+  Формат:
+  {
+    15: 34,
+    16: 5
+  }
+
+  где ключ — cabinetZoneId,
+  значение — число пациентов.
+*/
 const patientInputs = reactive({})
 
 const savedCounts = ref([])
@@ -141,50 +154,38 @@ function getZone(zoneId) {
 }
 
 function getZonesForCabinet(cabinetId) {
-  const links = cabinetZones.value || []
-  const result = []
-  
-  for (let i = 0; i < links.length; i++) {
-    const link = links[i]
-    if (link.cabinetId === cabinetId) {
+  return cabinetZones.value
+    .filter((link) => link.cabinetId === cabinetId)
+    .map((link) => {
       const zone = getZone(link.zoneId)
-      result.push({
+
+      return {
         cabinetZoneId: link.id,
         zoneId: link.zoneId,
         name: zone?.name || 'Удалённая зона',
         price: zone?.price || 0,
-      })
-    }
-  }
-  
-  return result.sort((a, b) => a.name.localeCompare(b.name, 'ru'))
+      }
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, 'ru'))
 }
 
 const cabinetsWithZones = computed(() => {
-  const cabinetsList = cabinets.value || []
-  
-  if (!cabinetsList.length) {
-    return []
-  }
-  
-  const sortedCabinets = cabinetsList.slice().sort((a, b) => {
-    const aOrder = Number.isFinite(a.sortOrder) ? a.sortOrder : Number.MAX_SAFE_INTEGER
-    const bOrder = Number.isFinite(b.sortOrder) ? bOrder : Number.MAX_SAFE_INTEGER
-    const orderDiff = aOrder - bOrder
-    if (orderDiff !== 0) return orderDiff
-    return a.name.localeCompare(b.name, 'ru')
-  })
-  
-  const result = []
-  for (let i = 0; i < sortedCabinets.length; i++) {
-    const cabinet = sortedCabinets[i]
-    result.push({
+  return [...cabinets.value]
+    .sort((a, b) => {
+      const aOrder = Number.isFinite(a.sortOrder)
+        ? a.sortOrder
+        : Number.MAX_SAFE_INTEGER
+
+      const bOrder = Number.isFinite(b.sortOrder)
+        ? b.sortOrder
+        : Number.MAX_SAFE_INTEGER
+
+      return aOrder - bOrder || a.name.localeCompare(b.name, 'ru')
+    })
+    .map((cabinet) => ({
       ...cabinet,
       zones: getZonesForCabinet(cabinet.id),
-    })
-  }
-  
-  return result
+    }))
 })
 
 const totalPatients = computed(() => {
@@ -233,14 +234,25 @@ async function loadPatientsForDate() {
 
     savedCounts.value = records
 
+    /*
+      Очищаем поля, иначе при переключении даты могли бы
+      остаться числа от предыдущего дня.
+    */
     Object.keys(patientInputs).forEach((key) => {
       delete patientInputs[key]
     })
 
+    /*
+      Заполняем все существующие привязки нулём.
+      В шаблоне input сразу будет показывать 0.
+    */
     cabinetZones.value.forEach((link) => {
       patientInputs[link.id] = 0
     })
 
+    /*
+      Подставляем сохранённые значения за выбранную дату.
+    */
     records.forEach((record) => {
       patientInputs[record.cabinetZoneId] = record.count
     })
@@ -251,6 +263,9 @@ async function loadPatientsForDate() {
   }
 }
 
+/*
+  При смене даты загружаются именно данные этой даты.
+*/
 watch(
   selectedDate,
   async () => {
@@ -259,6 +274,10 @@ watch(
   { immediate: true },
 )
 
+/*
+  Если на странице добавили новую привязку кабинет-зона,
+  она должна сразу появиться среди полей ввода с нулём.
+*/
 watch(
   cabinetZones,
   () => {
@@ -287,6 +306,11 @@ async function savePatients() {
       for (const link of cabinetZones.value) {
         const count = Math.max(0, Number(patientInputs[link.id]) || 0)
 
+        /*
+          Находим запись за эту дату и эту привязку.
+          Если есть — обновляем.
+          Если нет — создаём.
+        */
         const existing = await db.patientCounts
           .where('[date+cabinetZoneId]')
           .equals([selectedDate.value, link.id])
@@ -311,6 +335,9 @@ async function savePatients() {
 
     savedMessage.value = `Данные за ${selectedDateLabel.value} сохранены`
 
+    /*
+      Обновляем локальный снимок уже сохранённых значений.
+    */
     savedCounts.value = await db.patientCounts
       .where('date')
       .equals(selectedDate.value)
@@ -348,7 +375,7 @@ async function dropCabinet(targetCabinetId) {
     return
   }
 
-  const ordered = cabinetsWithZones.value.slice()
+  const ordered = [...cabinetsWithZones.value]
   const sourceIndex = ordered.findIndex(
     (cabinet) => cabinet.id === sourceCabinetId,
   )
@@ -361,9 +388,13 @@ async function dropCabinet(targetCabinetId) {
     return
   }
 
-  const movedCabinet = ordered.splice(sourceIndex, 1)[0]
+  const [movedCabinet] = ordered.splice(sourceIndex, 1)
   ordered.splice(targetIndex, 0, movedCabinet)
 
+  /*
+    Сохраняем новый порядок.
+    Числа 10, 20, 30 ... оставляют место для будущих вставок.
+  */
   await db.transaction('rw', db.cabinets, async () => {
     for (let index = 0; index < ordered.length; index++) {
       await db.cabinets.update(ordered[index].id, {
@@ -389,56 +420,58 @@ function clearAllInputs() {
 </script>
 
 <template>
-  <div class="mx-auto max-w-6xl p-3">
-    <header class="apple-glass sticky top-2 z-20 mb-3 rounded-2xl px-3 py-3 md:px-4">
+    <header
+      class="apple-glass sticky top-4 z-20 mb-6 rounded-3xl px-4 py-4 md:px-6"
+    >
       <div>
-        <h1 class="text-xl font-bold">Пациенты по кабинетам</h1>
+        <h1 class="text-2xl font-bold">Пациенты по кабинетам</h1>
 
-        <p class="mt-1 text-xs text-gray-500">
-          Введите количество пациентов по каждой зоне и сохраните данные за выбранную дату.
+        <p class="mt-1 text-sm text-gray-500">
+          Введите количество пациентов по каждой зоне и сохраните данные за
+          выбранную дату.
         </p>
       </div>
 
       <div class="flex flex-wrap items-end gap-2">
         <UFormField label="Дата">
-          <UInput v-model="selectedDate" type="date" class="w-40" />
+          <UInput v-model="selectedDate" type="date" class="w-44" />
         </UFormField>
 
-        <UButton color="neutral" variant="soft" size="sm" @click="setToday">
+        <UButton color="neutral" variant="soft" @click="setToday">
           Сегодня
         </UButton>
 
-        <UButton color="neutral" variant="soft" size="sm" @click="clearAllInputs">
+        <UButton color="neutral" variant="soft" @click="clearAllInputs">
           Очистить
         </UButton>
 
-        <UButton :loading="isSaving" size="sm" @click="savePatients"> Сохранить </UButton>
+        <UButton :loading="isSaving" @click="savePatients"> Сохранить </UButton>
       </div>
     </header>
 
     <UAlert
       v-if="savedMessage"
-      class="mb-3"
+      class="mb-4"
       color="success"
       variant="subtle"
       title="Сохранено"
       :description="savedMessage"
     />
 
-    <div class="mb-4 grid gap-3 sm:grid-cols-3">
-      <UCard class="apple-glass-soft apple-glass-inset rounded-2xl overflow-hidden">
-        <p class="text-xs text-gray-500">Пациентов за выбранный день</p>
+    <div class="mb-5 grid gap-3 sm:grid-cols-3">
+      <UCard class="apple-glass-soft apple-glass-inset rounded-3xl overflow-hidden">
+        <p class="text-sm text-gray-500">Пациентов за выбранный день</p>
 
-        <p class="mt-1 text-xl font-bold">
+        <p class="mt-1 text-2xl font-bold">
           {{ totalPatients }}
         </p>
       </UCard>
 
-      <UCard class="apple-glass-soft apple-glass-inset rounded-2xl overflow-hidden">
-        <p class="text-xs text-gray-500">Сумма за выбранный день</p>
+      <UCard class="apple-glass-soft apple-glass-inset rounded-3xl overflow-hidden">
+        <p class="text-sm text-gray-500">Сумма за выбранный день</p>
 
         <div class="mt-1 flex items-center gap-2">
-          <p class="text-xl font-bold">
+          <p class="text-2xl font-bold">
             {{ isMoneyVisible ? formatMoney(totalMoney) : '••••••' }}
           </p>
 
@@ -446,18 +479,18 @@ function clearAllInputs() {
             :icon="isMoneyVisible ? 'i-lucide-eye-off' : 'i-lucide-eye'"
             color="neutral"
             variant="ghost"
-            size="xs"
+            size="sm"
             :aria-label="isMoneyVisible ? 'Скрыть суммы' : 'Показать суммы'"
             @click="toggleMoneyVisibility"
           />
         </div>
       </UCard>
 
-      <UCard class="apple-glass-soft apple-glass-inset rounded-2xl overflow-hidden">
-        <p class="text-xs text-gray-500">Сумма за {{ selectedMonthTitle }}</p>
+      <UCard class="apple-glass-soft apple-glass-inset rounded-3xl overflow-hidden">
+        <p class="text-sm text-gray-500">Сумма за {{ selectedMonthTitle }}</p>
 
         <div class="mt-1 flex items-center gap-2">
-          <p class="text-xl font-bold">
+          <p class="text-2xl font-bold">
             {{ isMoneyVisible ? formatMoney(monthMoney) : '••••••' }}
           </p>
 
@@ -465,7 +498,7 @@ function clearAllInputs() {
             :icon="isMoneyVisible ? 'i-lucide-eye-off' : 'i-lucide-eye'"
             color="neutral"
             variant="ghost"
-            size="xs"
+            size="sm"
             :aria-label="isMoneyVisible ? 'Скрыть суммы' : 'Показать суммы'"
             @click="toggleMoneyVisibility"
           />
@@ -473,16 +506,16 @@ function clearAllInputs() {
       </UCard>
     </div>
 
-    <div v-if="isLoading" class="py-8 text-center text-xs text-gray-500">
+    <div v-if="isLoading" class="py-10 text-center text-sm text-gray-500">
       Загружаю данные…
     </div>
 
-    <div v-else-if="cabinetsWithZones.length" class="space-y-2">
+    <div v-else-if="cabinetsWithZones.length" class="space-y-3">
       <UCard
         v-for="cabinet in cabinetsWithZones"
         :key="cabinet.id"
         :class="[
-          'transition-opacity apple-glass-soft rounded-xl border-white/60 shadow-none',
+          'transition-opacity apple-glass-soft rounded-2xl border-white/60 shadow-none',
           draggedCabinetId === cabinet.id ? 'opacity-40' : '',
           dragOverCabinetId === cabinet.id ? 'ring-2 ring-primary' : '',
         ]"
@@ -490,7 +523,9 @@ function clearAllInputs() {
         @drop.prevent="dropCabinet(cabinet.id)"
       >
         <template #header>
-          <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div
+            class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between"
+          >
             <div class="flex min-w-0 items-center gap-2">
               <button
                 type="button"
@@ -501,7 +536,7 @@ function clearAllInputs() {
                 @dragstart="startDrag(cabinet.id)"
                 @dragend="endDrag"
               >
-                <UIcon name="i-lucide-grip-vertical" class="size-4" />
+                <UIcon name="i-lucide-grip-vertical" class="size-5" />
               </button>
 
               <div class="min-w-0">
@@ -514,12 +549,12 @@ function clearAllInputs() {
                 </p>
               </div>
 
-              <UBadge color="neutral" variant="subtle" size="xs">
+              <UBadge color="neutral" variant="subtle" size="sm">
                 {{ cabinet.zones.length }} зон
               </UBadge>
             </div>
 
-            <div class="flex shrink-0 gap-4 text-xs text-gray-500">
+            <div class="flex shrink-0 gap-4 text-sm text-gray-500">
               <span>{{ cabinetPatientsTotal(cabinet) }} пациентов</span>
 
               <span>
@@ -540,14 +575,14 @@ function clearAllInputs() {
           <div
             v-for="zone in cabinet.zones"
             :key="zone.cabinetZoneId"
-            class="grid grid-cols-[minmax(0,1fr)_80px_100px] items-center gap-2 px-3 py-1.5"
+            class="grid grid-cols-[minmax(0,1fr)_96px_110px] items-center gap-3 px-4 py-2"
           >
             <div class="min-w-0">
-              <p class="truncate text-sm font-medium">
+              <p class="truncate font-medium">
                 {{ zone.name }}
               </p>
 
-              <p class="text-xs text-gray-500">
+              <p class="text-sm text-gray-500">
                 {{ formatMoney(zone.price) }} за пациента
               </p>
             </div>
@@ -560,7 +595,7 @@ function clearAllInputs() {
               class="w-full"
             />
 
-            <p class="text-right text-xs font-medium">
+            <p class="text-right text-sm font-medium">
               {{
                 formatMoney(
                   (Number(patientInputs[zone.cabinetZoneId]) || 0) * zone.price,
@@ -570,8 +605,9 @@ function clearAllInputs() {
           </div>
         </div>
 
-        <p v-else class="px-3 py-2 text-xs text-gray-500">
-          К этому кабинету не прикреплены зоны. Добавьте их на странице «Кабинеты и зоны ».
+        <p v-else class="px-4 py-3 text-sm text-gray-500">
+          К этому кабинету не прикреплены зоны. Добавьте их на странице
+          «Кабинеты и зоны».
         </p>
       </UCard>
     </div>
@@ -584,29 +620,9 @@ function clearAllInputs() {
       description="Сначала создайте кабинеты и привяжите к ним зоны на странице /add."
     />
 
-    <div class="mt-3 flex justify-end">
-      <UButton :loading="isSaving" size="md" @click="savePatients">
+    <div class="mt-4 flex justify-end">
+      <UButton :loading="isSaving" size="lg" @click="savePatients">
         Сохранить данные за {{ selectedDateLabel }}
       </UButton>
     </div>
-  </div>
 </template>
-
-<style scoped>
-.apple-glass,
-.apple-glass-soft {
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(12px);
-}
-
-.dark .apple-glass,
-.dark .apple-glass-soft {
-  background: rgba(17, 24, 39, 0.5);
-}
-
-.apple-glass-inset {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    0 2px 8px rgba(0, 0, 0, 0.06);
-}
-</style>
