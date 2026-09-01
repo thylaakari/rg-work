@@ -500,7 +500,6 @@ function clearAllInputs() {
 }
 </script>
 
-
 <template>
     <header
       class="apple-glass sticky top-2 z-20 mb-3 rounded-2xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-2"
@@ -572,7 +571,11 @@ function clearAllInputs() {
       Загружаю данные…
     </div>
 
-    <div v-else-if="cabinetsWithZones.length" class="space-y-2">
+    <!-- Сетка САМИХ КАБИНЕТОВ: 1 колонка на мобильных, 2 на sm, 3 на xl -->
+    <div
+      v-else-if="cabinetsWithZones.length"
+      class="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3"
+    >
       <UCard
         v-for="cabinet in cabinetsWithZones"
         :key="cabinet.id"
@@ -621,43 +624,41 @@ function clearAllInputs() {
           </div>
         </template>
 
-        <!-- Зоны в сетке: 1 колонка на мобильных, 2 на sm, 3 на lg -->
+        <!-- Зоны внутри кабинета — обычный список, как и было -->
         <div
           v-if="cabinet.zones.length"
-          class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3"
+          class="divide-y divide-gray-200 dark:divide-gray-800"
         >
           <div
             v-for="zone in cabinet.zones"
             :key="zone.cabinetZoneId"
-            class="rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2"
+            class="grid grid-cols-[minmax(0,1fr)_80px_96px] items-center gap-2 px-3 py-1"
           >
-            <div class="flex items-baseline justify-between gap-2">
+            <div class="min-w-0 flex items-baseline gap-1.5">
               <p class="truncate text-sm font-medium">
                 {{ zone.name }}
               </p>
               <p class="shrink-0 text-xs text-gray-500">
-                {{ formatMoney(zone.price) }}
+                ({{ formatMoney(zone.price) }})
               </p>
             </div>
 
-            <div class="mt-1.5 flex items-center gap-2">
-              <UInput
-                v-model.number="patientInputs[zone.cabinetZoneId]"
-                type="number"
-                size="sm"
-                min="0"
-                placeholder="0"
-                class="w-full"
-              />
+            <UInput
+              v-model.number="patientInputs[zone.cabinetZoneId]"
+              type="number"
+              size="sm"
+              min="0"
+              placeholder="0"
+              class="w-full"
+            />
 
-              <p class="w-24 shrink-0 text-right text-sm font-medium">
-                {{
-                  formatMoney(
-                    (Number(patientInputs[zone.cabinetZoneId]) || 0) * zone.price,
-                  )
-                }}
-              </p>
-            </div>
+            <p class="text-right text-sm font-medium">
+              {{
+                formatMoney(
+                  (Number(patientInputs[zone.cabinetZoneId]) || 0) * zone.price,
+                )
+              }}
+            </p>
           </div>
         </div>
 
@@ -681,4 +682,3 @@ function clearAllInputs() {
       </UButton>
     </div>
 </template>
-
