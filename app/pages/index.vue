@@ -157,7 +157,10 @@ function getZonesForCabinet(cabinetId) {
 }
 
 const cabinetsWithZones = computed(() => {
-  return [...cabinets.value]
+  const list = cabinets.value || []
+  if (!list.length) return []
+
+  return [...list]
     .sort((a, b) => {
       const aOrder = Number.isFinite(a.sortOrder)
         ? a.sortOrder
