@@ -141,38 +141,50 @@ function getZone(zoneId) {
 }
 
 function getZonesForCabinet(cabinetId) {
-  return cabinetZones.value
-    .filter((link) => link.cabinetId === cabinetId)
-    .map((link) => {
+  const links = cabinetZones.value || []
+  const result = []
+  
+  for (let i = 0; i < links.length; i++) {
+    const link = links[i]
+    if (link.cabinetId === cabinetId) {
       const zone = getZone(link.zoneId)
-
-      return {
+      result.push({
         cabinetZoneId: link.id,
         zoneId: link.zoneId,
         name: zone?.name || 'Удалённая зона',
         price: zone?.price || 0,
-      }
-    })
-    .sort((a, b) => a.name.localeCompare(b.name, 'ru'))
+      })
+    }
+  }
+  
+  return result.sort((a, b) => a.name.localeCompare(b.name, 'ru'))
 }
 
 const cabinetsWithZones = computed(() => {
-  return [...cabinets.value]
-    .sort((a, b) => {
-      const aOrder = Number.isFinite(a.sortOrder)
-        ? a.sortOrder
-        : Number.MAX_SAFE_INTEGER
-
-      const bOrder = Number.isFinite(b.sortOrder)
-        ? bOrder
-        : Number.MAX_SAFE_INTEGER
-
-      return aOrder - bOrder || a.name.localeCompare(b.name, 'ru')
-    })
-    .map((cabinet) => ({
+  const cabinetsList = cabinets.value || []
+  
+  if (!cabinetsList.length) {
+    return []
+  }
+  
+  const sortedCabinets = cabinetsList.slice().sort((a, b) => {
+    const aOrder = Number.isFinite(a.sortOrder) ? a.sortOrder : Number.MAX_SAFE_INTEGER
+    const bOrder = Number.isFinite(b.sortOrder) ? bOrder : Number.MAX_SAFE_INTEGER
+    const orderDiff = aOrder - bOrder
+    if (orderDiff !== 0) return orderDiff
+    return a.name.localeCompare(b.name, 'ru')
+  })
+  
+  const result = []
+  for (let i = 0; i < sortedCabinets.length; i++) {
+    const cabinet = sortedCabinets[i]
+    result.push({
       ...cabinet,
       zones: getZonesForCabinet(cabinet.id),
-    }))
+    })
+  }
+  
+  return result
 })
 
 const totalPatients = computed(() => {
@@ -336,7 +348,7 @@ async function dropCabinet(targetCabinetId) {
     return
   }
 
-  const ordered = [...cabinetsWithZones.value]
+  const ordered = cabinetsWithZones.value.slice()
   const sourceIndex = ordered.findIndex(
     (cabinet) => cabinet.id === sourceCabinetId,
   )
@@ -349,7 +361,7 @@ async function dropCabinet(targetCabinetId) {
     return
   }
 
-  const [movedCabinet] = ordered.splice(sourceIndex, 1)
+  const movedCabinet = ordered.splice(sourceIndex, 1)[0]
   ordered.splice(targetIndex, 0, movedCabinet)
 
   await db.transaction('rw', db.cabinets, async () => {
