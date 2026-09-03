@@ -571,10 +571,9 @@ function clearAllInputs() {
       Загружаю данные…
     </div>
 
-    <!-- Сетка САМИХ КАБИНЕТОВ: 1 колонка на мобильных, 2 на sm, 3 на xl -->
     <div
       v-else-if="cabinetsWithZones.length"
-      class="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3"
+      class="grid grid-cols-1 gap-2 sm:grid-cols-2"
     >
       <UCard
         v-for="cabinet in cabinetsWithZones"
