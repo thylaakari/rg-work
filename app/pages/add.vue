@@ -82,10 +82,6 @@ const cabinetForm = reactive({
   name: '',
 })
 
-const zoneForm = reactive({
-  name: '',
-  price: null,
-})
 
 const bindingForm = reactive({
   cabinetId: null,
@@ -99,10 +95,6 @@ const cabinetEditingName = ref('')
 
 const zoneEditingId = ref(null)
 
-const zoneEditingForm = reactive({
-  name: '',
-  price: null,
-})
 
 /* ---------- Select items для Nuxt UI ---------- */
 
