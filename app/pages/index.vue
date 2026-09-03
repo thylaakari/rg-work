@@ -499,7 +499,6 @@ function clearAllInputs() {
   })
 }
 </script>
-
 <template>
     <header
       class="apple-glass sticky top-2 z-20 mb-3 rounded-2xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-2"
@@ -629,40 +628,14 @@ function clearAllInputs() {
           class="divide-y divide-gray-200 dark:divide-gray-800"
         >
           <div
-  v-for="zone in cabinet.zones"
-  :key="zone.cabinetZoneId"
-  class="grid grid-cols-[minmax(0,1fr)_80px_96px] items-center gap-2 px-3 py-1"
->
-  <div class="min-w-0 flex items-baseline gap-1.5">
-    <UBadge :color="zone.color" variant="subtle" size="sm" class="truncate">
-      {{ zone.name }}
-    </UBadge>
-    <p class="shrink-0 text-xs text-gray-500">
-      ({{ formatMoney(zone.price) }})
-    </p>
-  </div>
-
-  <UInput
-    v-model.number="patientInputs[zone.cabinetZoneId]"
-    type="number"
-    size="sm"
-    min="0"
-    placeholder="0"
-    class="w-full"
-  />
-
-  <p class="text-right text-sm font-medium">
-    {{
-      formatMoney(
-        (Number(patientInputs[zone.cabinetZoneId]) || 0) * zone.price,
-      )
-    }}
-  </p>
-</div>
+            v-for="zone in cabinet.zones"
+            :key="zone.cabinetZoneId"
+            class="grid grid-cols-[minmax(0,1fr)_80px_96px] items-center gap-2 px-3 py-1"
+          >
             <div class="min-w-0 flex items-baseline gap-1.5">
-              <p class="truncate text-sm font-medium">
+              <UBadge :color="zone.color" variant="subtle" size="sm" class="truncate">
                 {{ zone.name }}
-              </p>
+              </UBadge>
               <p class="shrink-0 text-xs text-gray-500">
                 ({{ formatMoney(zone.price) }})
               </p>
