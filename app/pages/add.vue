@@ -43,6 +43,39 @@ const zones = useLiveQuery(() => db.zones.orderBy('name').toArray(), [])
 
 const cabinetZones = useLiveQuery(() => db.cabinetZones.toArray(), [])
 
+/* ---------- Палитра цветов зон ---------- */
+const ZONE_COLORS = [
+  { label: 'Основной',      value: 'primary' },
+  { label: 'Вторичный',     value: 'secondary' },
+  { label: 'Успех',         value: 'success' },
+  { label: 'Инфо',          value: 'info' },
+  { label: 'Внимание',      value: 'warning' },
+  { label: 'Ошибка',        value: 'error' },
+  { label: 'Нейтральный',   value: 'neutral' },
+]
+
+const DEFAULT_ZONE_COLOR = 'neutral'
+
+function zoneColor(zone) {
+  return zone?.color || DEFAULT_ZONE_COLOR
+}
+
+/* ---------- Формы добавления ---------- */
+
+const zoneForm = reactive({
+  name: '',
+  price: null,
+  color: DEFAULT_ZONE_COLOR, // дефолт для новой зоны
+})
+
+/* ---------- Формы редактирования ---------- */
+
+const zoneEditingForm = reactive({
+  name: '',
+  price: null,
+  color: DEFAULT_ZONE_COLOR,
+})
+
 /* ---------- Формы добавления ---------- */
 
 const cabinetForm = reactive({
@@ -211,17 +244,20 @@ async function createZone() {
   await db.zones.add({
     name,
     price,
+    color: zoneForm.color || DEFAULT_ZONE_COLOR,
     createdAt: new Date().toISOString(),
   })
 
   zoneForm.name = ''
   zoneForm.price = null
+  zoneForm.color = DEFAULT_ZONE_COLOR
 }
 
 function startZoneEdit(zone) {
   zoneEditingId.value = zone.id
   zoneEditingForm.name = zone.name
   zoneEditingForm.price = zone.price
+  zoneEditingForm.color = zoneColor(zone) // fallback на 'neutral'
 }
 
 function cancelZoneEdit() {
@@ -245,9 +281,10 @@ async function updateZone() {
   }
 
   await db.zones.update(zoneEditingId.value, {
-    name,
-    price,
-  })
+  name,
+  price,
+  color: zoneEditingForm.color || DEFAULT_ZONE_COLOR,
+})
 
   cancelZoneEdit()
 }
@@ -386,6 +423,13 @@ async function detachZone(cabinetId, zoneId) {
               @keyup.enter="createZone"
             />
           </UFormField>
+          <UFormField label="Цвет зоны">
+  <USelect
+    v-model="zoneForm.color"
+    :items="ZONE_COLORS"
+    class="w-full"
+  />
+</UFormField>
 
           <UButton block @click="createZone"> Добавить зону </UButton>
         </div>
@@ -467,6 +511,13 @@ async function detachZone(cabinetId, zoneId) {
             @keyup.enter="updateZone"
           />
         </UFormField>
+        <UFormField label="Цвет зоны">
+  <USelect
+    v-model="zoneEditingForm.color"
+    :items="ZONE_COLORS"
+    class="w-full"
+  />
+</UFormField>
       </div>
 
       <div class="mt-4 flex gap-2">
@@ -492,9 +543,10 @@ async function detachZone(cabinetId, zoneId) {
         <UCard v-for="zone in zones" :key="zone.id" class="apple-glass-soft rounded-2xl border-white/60 shadow-none">
           <div class="flex items-start justify-between gap-4">
             <div>
-              <p class="font-semibold">
-                {{ zone.name }}
-              </p>
+              <UBadge :color="zoneColor(zone)" variant="subtle">
+  {{ zone.name }}
+</UBadge>
+<span class="ml-2 text-sm text-gray-500">{{ formatMoney(zone.price) }}</span>
 
               <p class="mt-1 text-sm text-gray-500">
                 {{ formatMoney(zone.price) }}
